@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en" data-ng-app="app">
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no" />
+
+    <title>GTR Comparer</title>
+
+    <script src="bower_components/jquery/dist/jquery.js"></script>
+    <script src="bower_components/lodash/lodash.js"></script>
+
+    <style>
+        /* LAYOUT */
+        html { height: 100%; }
+        html, body {
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            font-family: Consolas, monaco, monospace;
+            overflow-y: scroll;
+            min-height: 100%;
+        }
+
+        nav {
+            display: flex;
+            min-height: 40px;
+            margin: 10px;
+            width: 256px;
+            align-self: center;
+            padding-bottom: 0;
+            margin-bottom: 0;
+        }
+
+        nav button {
+            flex: 1 1 auto;
+            border-radius: 64px;
+            border: none;
+            background-color: white;
+            border: 3px solid rgb(47, 46, 255);
+            margin: 4px;
+            color: rgb(47, 46, 255);
+            font-weight: bold;
+            cursor: pointer;
+            min-width: 120px;
+        }
+
+        nav button:hover {
+            background-color: rgb(47, 46, 255);
+            color: white;
+        }
+
+        #panes {
+            display: flex;
+            flex: 1 1 auto;
+            margin: 10px;
+            margin-top: 0;
+            overflow: hidden;
+        }
+
+        #panes .left, #panes .right {
+            flex: 1 1 auto;
+            display: flex;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        textarea {
+            flex: 1 1 auto;
+            margin: 10px;
+            display: none;
+        }
+
+        .diff-container {
+            margin: 10px;
+            max-width: 50vw;
+            overflow: hidden;
+            padding: 2px;
+        }
+
+        #diff-button {
+            display: none;
+        }
+
+        #edit-button, #sort-button {
+            display: block;
+        }
+
+        #sort-button.sort:after {
+            content: ' ✔️️';
+        }
+
+        /* EDIT MODE */
+        body.edit-mode textarea,
+        body.edit-mode #diff-button {
+            display: block;
+        }
+
+        body.edit-mode #edit-button,
+        body.edit-mode #sort-button,
+        body.edit-mode .diff-container,
+        body.edit-mode svg {
+            display: none;
+        }
+
+        /* DIFF STYLING */
+        svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        svg line {
+            stroke: hsla(54,100%,45%,1);
+        }
+
+        .unmatched {
+            background-color: #ffc7ce;
+            color: #9c0006;
+            border-radius: 3px;
+        }
+
+        .token {
+            padding: 2px;
+        }
+
+        .hover {
+            border: 1px solid hsla(54,100%,45%,1);
+            border-radius: 5px;
+            background-color: #FFF59D;
+            padding: 1px;
+        }
+    </style>
+</head>
+<body class="edit-mode">
+    <svg><line id="line"/></svg>
+    <nav>
+        <button id="diff-button">Diff</button>
+        <button id="edit-button">Edit</button>
+        <button id="sort-button">Sort</button>
+    </nav>
+    <div id="panes">
+        <div class="left">
+            <textarea>04:56:41 PM&lt;&lt;GTR, 76W71 0 1205a53 561c 081J30XR10 5 92:TransactionId="1",cbr="USRupd",usrlogonid="500310",usrlogonnm="G Blake",usrexprydt="2159-12-31",usrtaxfile,usrshowdiry,usrworkgrop,usrmobile,usremailad="500310@FTR.com.au",usremailpf,usrfuttrh="1",usrhisttrh="1",usrpaidlve="1",usrempno="500310",usrappno,usraccorg,usrlogtrys="0",usrloglock,usrcopyfrm,usrcontent="0",usrreldef="RL01",usrlevel="1",usrscnlogn="DET",usrexcldap="Y",usrlogname="500310",usrfilter,usrdomain,usrextauth,usrbutton,usremailcd,usrmenlogn="STD",usrabsetmg,usrcmpgnpr,usrmstind,usrusrrole,usrextlog,usrwrkgind,usraccck[1]="hr21",usraccck[2]="chris21",usraccck[3],usraccck[4],usraccck[5],usraccck[6],usraccck[7],usraccck[8],usraccck[9],usraccck[10],usrmenurol[1]="SSERVICE",usrmenurol[2]="MASTER",usrmenurol[3],usrmenurol[4],usrmenurol[5],usrmenurol[6],usrmenurol[7],usrmenurol[8],usrmenurol[9],usrmenurol[10],usrdfltind[1]="Y",usrdfltind[2],usrdfltind[3],usrdfltind[4],usrdfltind[5],usrdfltind[6],usrdfltind[7],usrdfltind[8],usrdfltind[9],usrdfltind[10],usrworkg[1]="SSERVICE",usrworkg[2],usrworkg[3],usrworkg[4],usrworkg[5],usrworkg[6],usrworkg[7],usrworkg[8],usrworkg[9],usrworkg[10],updatetag="JXR ;70227154845",showtranslation,gw_transactionid="1"</textarea>
+            <div class="diff-container">
+            </div>
+        </div>
+
+        <div class="right">
+            <textarea>4:58:08 PM:&lt;&lt;56:cbr="USRupd",usrlogonid="500310",parentvalue="500310",showtranslation,gw_transactionid="56",usrlogonnm="G Blake",usrexprydt="2159-12-31",usrtaxfile,usrshowdiry,usrworkgrop,usrmobile,usremailad="500310@FTR.com.au",usremailpf,usrfuttrh="1",usrhisttrh="1",usrpaidlve="1",usrempno="500310",usrappno,usraccorg,usrlogtrys="0",usrloglock,usrcopyfrm,usrcontent="0",usrreldef="RL01",usrlevel="1",usrscnlogn="DET",usrexcldap="Y",usrlogname="500310",usrfilter,usrdomain,usrextauth,usrbutton,usremailcd,usrmenlogn="STD",usrabsetmg,usrcmpgnpr,usraccck[1]="hr21",usrmenurol[1]="SSERVICE",usrdfltind[1]="Y",usraccck[2]="chris21",usrmenurol[2]="MASTER",usrdfltind[2],usraccck[3],usrmenurol[3],usrdfltind[3],usraccck[4],usrmenurol[4],usrdfltind[4],usraccck[5],usrmenurol[5],usrdfltind[5],usraccck[6],usrmenurol[6],usrdfltind[6],usraccck[7],usrmenurol[7],usrdfltind[7],usraccck[8],usrmenurol[8],usrdfltind[8],usraccck[9],usrmenurol[9],usrdfltind[9],usraccck[10],usrmenurol[10],usrdfltind[10],usrmstind,usrusrrole,usrextlog,usrwrkgind,usrworkg[1]="SSERVICE",usrworkg[2]="MASTER",usrworkg[3],usrworkg[4],usrworkg[5],usrworkg[6],usrworkg[7],usrworkg[8],usrworkg[9],usrworkg[10],updatetag="JXR     ;70227155641"</textarea>
+            <div class="diff-container">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function diff() {
+            $('body').removeClass('edit-mode');
+            $('.diff-container').empty();
+
+            // cleanup
+            var a = cleanInput($('.left textarea') .val());
+            var b = cleanInput($('.right textarea').val());
+
+            // parse
+            a = a.split(',').map(_.trim);
+            b = b.split(',').map(_.trim);
+
+            if ($('#sort-button').hasClass('sort')) {
+                a = _.sortBy(a, _.lowerCase);
+                b = _.sortBy(b, _.lowerCase);
+            }
+
+            // tokenize
+            a = a.map(tokenize);
+            b = b.map(tokenize);
+
+            // show missing
+            a = a.map(_.partial(markMissing, _, b));
+            b = b.map(_.partial(markMissing, _, a));
+
+            // build el
+            a.forEach(buildTokenElement);
+            b.forEach(buildTokenElement);
+
+            // add elements to page
+            a.forEach((token) => token.el.appendTo('#panes .left .diff-container'));
+            b.forEach((token) => token.el.appendTo('#panes .right .diff-container'));
+
+            $('svg').height($(document).height());
+        }
+
+        function tokenize(c) {
+            var token = {key: k(c), value: v(c)}
+            token.el = $('<div>').on('mouseover', function() {
+                addHover(token);
+            });
+            token.el.on('mouseout' , function() {
+                removeHover(token);
+            });
+            return token;
+        }
+
+        function addHover(token) {
+            token.el.children().addClass('hover');
+            if(token.matchingToken) {
+                token.matchingToken.el.children().addClass('hover');
+                drawLine(token.el, token.matchingToken.el);
+            }
+        }
+
+        function removeHover(token) {
+            token.el.children().removeClass('hover');
+            if (token.matchingToken) {
+                token.matchingToken.el.children().removeClass('hover');
+                $('#line').hide();
+            }
+        }
+
+        function drawLine(from, to) {
+            var pos1 = from.children().position();
+            var pos2 = to.children().position();
+            if (pos1.left > pos2.left) {
+                var temp = from;
+                from = to;
+                to = temp;
+            }
+            pos1 = from.children().position();
+            pos2 = to.children().position();
+
+            pos1.top += from.children().height() / 2;
+            pos1.left += from.children().outerWidth();
+            pos2.top += to.children().height() / 2;
+
+            $('#line').show()
+                .attr('x1', pos1.left)
+                .attr('y1', pos1.top)
+                .attr('x2', pos2.left)
+                .attr('y2', pos2.top);
+        }
+
+        function k(component) {
+            return _(component).split('=').head();
+        }
+
+        function v(component) {
+            return _(component).split('=').tail().join('=');
+        }
+
+        function markMissing(token, components) {
+            var matchingToken = _.find(components, {key: token.key});
+            if (matchingToken) {
+                token.matchingToken = matchingToken;
+            }
+            return token;
+        }
+
+        function buildTokenElement(token) {
+            var s = $('<span class="token">').appendTo(token.el);
+            var k = $(`<span>${token.key}</span>`).appendTo(s);
+
+            if (!token.matchingToken) {
+                k.addClass('unmatched');
+            }
+            if (!token.value) {
+                return;
+            }
+
+            var v = $('<span>').text(token.value);
+            if (token.matchingToken && token.value !== token.matchingToken.value) {
+                v.addClass('unmatched');
+            }
+            s.append('=').append(v);
+        }
+
+        function cleanInput(input) {
+            input = input.trim();
+            input = input.replace(/^.*?(\w*)\=/g, '$1=');
+            return input;
+        }
+
+        $('#diff-button').click(diff);
+        $('#edit-button').click(() => $('body').addClass('edit-mode'));
+        $('#sort-button').click(() => {
+            $('#sort-button').toggleClass('sort');
+            diff();
+        });
+    </script>
+</body>
+</html>
+
