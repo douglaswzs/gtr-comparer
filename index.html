@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="en" data-ng-app="app">
+
 <head>
     <meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1" />
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no" />
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no" />
 
     <title>GTR Comparer</title>
 
@@ -12,8 +14,12 @@
 
     <style>
         /* LAYOUT */
-        html { height: 100%; }
-        html, body {
+        html {
+            height: 100%;
+        }
+
+        html,
+        body {
             padding: 0;
             margin: 0;
             box-sizing: border-box;
@@ -63,7 +69,8 @@
             overflow: hidden;
         }
 
-        #panes .left, #panes .right {
+        #panes .left,
+        #panes .right {
             flex: 1 1 auto;
             display: flex;
             justify-content: center;
@@ -87,7 +94,8 @@
             display: none;
         }
 
-        #edit-button, #sort-button {
+        #edit-button,
+        #sort-button {
             display: block;
         }
 
@@ -119,7 +127,7 @@
         }
 
         svg line {
-            stroke: hsla(54,100%,45%,1);
+            stroke: hsla(54, 100%, 45%, 1);
         }
 
         .unmatched {
@@ -133,20 +141,62 @@
         }
 
         .hover {
-            border: 1px solid hsla(54,100%,45%,1);
+            border: 1px solid hsla(54, 100%, 45%, 1);
             border-radius: 5px;
             background-color: #FFF59D;
             padding: 1px;
         }
+
+
+        /* Color-coded differences */
+        .match {
+            background-color: #defce8;
+            /* Light Green */
+            color: #155724;
+        }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 10px;
+        }
+
+        /* Legends */
+        #legend {
+            font-size: 0.9em;
+        }
+
+        #legend span {
+            margin-right: 15px;
+        }
+
+        /* Summary */
+        #summary {
+            text-align: right;
+        }
     </style>
 </head>
+
 <body class="edit-mode">
-    <svg><line id="line"/></svg>
+    <svg>
+        <line id="line" />
+    </svg>
+    <!-- Legend for color-coded differences -->
+    <div class="header-container">
+        <div id="legend">
+            <span><span style="background-color: #defce8; padding: 2px;"> </span> Match (✅)</span>
+            <span><span style="background-color: #ffc7ce; padding: 2px;"> </span> Missing (❌)</span>
+        </div>
+        <div id="summary"></div>
+    </div>
+
     <nav>
         <button id="diff-button">Diff</button>
         <button id="edit-button">Edit</button>
         <button id="sort-button">Sort</button>
     </nav>
+
     <div id="panes">
         <div class="left">
             <textarea>04:56:41 PM&lt;&lt;GTR, 76W71 0 1205a53 561c 081J30XR10 5 92:TransactionId="1",cbr="USRupd",usrlogonid="500310",usrlogonnm="G Blake",usrexprydt="2159-12-31",usrtaxfile,usrshowdiry,usrworkgrop,usrmobile,usremailad="500310@FTR.com.au",usremailpf,usrfuttrh="1",usrhisttrh="1",usrpaidlve="1",usrempno="500310",usrappno,usraccorg,usrlogtrys="0",usrloglock,usrcopyfrm,usrcontent="0",usrreldef="RL01",usrlevel="1",usrscnlogn="DET",usrexcldap="Y",usrlogname="500310",usrfilter,usrdomain,usrextauth,usrbutton,usremailcd,usrmenlogn="STD",usrabsetmg,usrcmpgnpr,usrmstind,usrusrrole,usrextlog,usrwrkgind,usraccck[1]="hr21",usraccck[2]="chris21",usraccck[3],usraccck[4],usraccck[5],usraccck[6],usraccck[7],usraccck[8],usraccck[9],usraccck[10],usrmenurol[1]="SSERVICE",usrmenurol[2]="MASTER",usrmenurol[3],usrmenurol[4],usrmenurol[5],usrmenurol[6],usrmenurol[7],usrmenurol[8],usrmenurol[9],usrmenurol[10],usrdfltind[1]="Y",usrdfltind[2],usrdfltind[3],usrdfltind[4],usrdfltind[5],usrdfltind[6],usrdfltind[7],usrdfltind[8],usrdfltind[9],usrdfltind[10],usrworkg[1]="SSERVICE",usrworkg[2],usrworkg[3],usrworkg[4],usrworkg[5],usrworkg[6],usrworkg[7],usrworkg[8],usrworkg[9],usrworkg[10],updatetag="JXR ;70227154845",showtranslation,gw_transactionid="1"</textarea>
@@ -167,7 +217,7 @@
             $('.diff-container').empty();
 
             // cleanup
-            var a = cleanInput($('.left textarea') .val());
+            var a = cleanInput($('.left textarea').val());
             var b = cleanInput($('.right textarea').val());
 
             // parse
@@ -196,14 +246,41 @@
             b.forEach((token) => token.el.appendTo('#panes .right .diff-container'));
 
             $('svg').height($(document).height());
+
+            calcSummary(a, b);
+        }
+
+        function calcSummary(a, b) {
+            // Calculate Summary
+            let totalLeft = a.length;
+            let totalRight = b.length;
+            let matched = 0;
+            let mismatched = 0;
+            let missing = 0;
+
+            a.forEach(token => {
+                if (token.matchingToken) {
+                    if (token.value === token.matchingToken.value) {
+                        matched++;
+                    } else {
+                        mismatched++;
+                    }
+                } else {
+                    missing++;
+                }
+            });
+
+            $('#summary').text(
+                `Total Left: ${totalLeft} | Total Right: ${totalRight} | Matched: ${matched} | Mismatched: ${mismatched} | Missing: ${missing}`
+            );
         }
 
         function tokenize(c) {
-            var token = {key: k(c), value: v(c)}
-            token.el = $('<div>').on('mouseover', function() {
+            var token = { key: k(c), value: v(c) }
+            token.el = $('<div>').on('mouseover', function () {
                 addHover(token);
             });
-            token.el.on('mouseout' , function() {
+            token.el.on('mouseout', function () {
                 removeHover(token);
             });
             return token;
@@ -211,7 +288,7 @@
 
         function addHover(token) {
             token.el.children().addClass('hover');
-            if(token.matchingToken) {
+            if (token.matchingToken) {
                 token.matchingToken.el.children().addClass('hover');
                 drawLine(token.el, token.matchingToken.el);
             }
@@ -256,7 +333,7 @@
         }
 
         function markMissing(token, components) {
-            var matchingToken = _.find(components, {key: token.key});
+            var matchingToken = _.find(components, { key: token.key });
             if (matchingToken) {
                 token.matchingToken = matchingToken;
             }
@@ -270,6 +347,9 @@
             if (!token.matchingToken) {
                 k.addClass('unmatched');
             }
+            else {
+                k.addClass('match');
+            }
             if (!token.value) {
                 return;
             }
@@ -277,6 +357,9 @@
             var v = $('<span>').text(token.value);
             if (token.matchingToken && token.value !== token.matchingToken.value) {
                 v.addClass('unmatched');
+            }
+            else {
+                v.addClass('match');
             }
             s.append('=').append(v);
         }
@@ -288,12 +371,15 @@
         }
 
         $('#diff-button').click(diff);
-        $('#edit-button').click(() => $('body').addClass('edit-mode'));
+        $('#edit-button').click(() => {
+            $('body').addClass('edit-mode')
+            $('#summary').text('');
+        });
         $('#sort-button').click(() => {
             $('#sort-button').toggleClass('sort');
             diff();
         });
     </script>
 </body>
-</html>
 
+</html>
